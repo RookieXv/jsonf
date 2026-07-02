@@ -303,7 +303,9 @@ function inferJsonPath(value, targetLine) {
   <div class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark">{ }</div>
+        <div class="brand-mark" aria-hidden="true">
+          <img src="/favicon.svg" alt="" />
+        </div>
         <div>
           <strong>JSONF</strong>
           <span v-if="t.appTagline">{{ t.appTagline }}</span>
