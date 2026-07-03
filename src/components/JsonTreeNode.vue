@@ -43,6 +43,7 @@ watch(
 watch(
   () => props.revealId,
   () => {
+    // 搜索和新增节点会触发 reveal 信号，递归树上的祖先节点依次展开以露出目标节点。
     if (shouldReveal.value) open.value = true
   },
   { immediate: true },
@@ -76,6 +77,7 @@ function isSameOrAncestorPath(path, target) {
 }
 
 function markTreeSearch(value, query) {
+  // 标签内容先转义再通过 v-html 渲染，随后只给搜索命中片段包上 mark 标签。
   const escaped = escapeHtml(String(value))
   const target = query.trim()
   if (!target) return escaped

@@ -1,6 +1,6 @@
 /**
- * JSONF interface copy.
- * Keep labels centralized so the language selector can grow without touching components.
+ * JSONF 界面文案。
+ * 文案集中维护，后续扩展语言时不需要改动组件。
  */
 export const LANGUAGES = [
   { key: 'zh-CN', short: '简', label: '简体中文' },

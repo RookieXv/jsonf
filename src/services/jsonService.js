@@ -13,7 +13,7 @@ const DEFAULT_SAMPLE = {
 export const sampleJson = JSON.stringify(DEFAULT_SAMPLE, null, 2)
 
 /**
- * Parse and transform JSON in one place so components stay presentation-focused.
+ * 集中解析和转换 JSON，让组件只负责界面展示。
  */
 export function analyzeJson(input, options) {
   const startedAt = performance.now()
@@ -27,6 +27,7 @@ export function analyzeJson(input, options) {
     const parsed = JSON.parse(trimmed)
     const normalized = options.preserveEscapes ? parsed : unwrapEscapedStrings(parsed)
     const sorted = options.sortOutputKeys ? sortObjectKeys(normalized) : normalized
+    // 所有输出形态都来自同一份解析结果，避免切换模式时重复解析或内容漂移。
     const pretty = formatJson(sorted, options.indent, options.preserveEscapes, input)
     const minified = JSON.stringify(sorted)
     const escaped = escapeJsonOutput(pretty)
@@ -162,6 +163,7 @@ function normalizeParseError(error, input) {
   const message = error instanceof Error ? error.message : String(error)
   const match = message.match(/position\s+(\d+)/i)
   const tokenMatch = message.match(/Unexpected token '(.+?)'/i)
+  // 各浏览器的 JSON.parse 错误信息并不完全一致；没有数字位置时尝试用 token 回退定位。
   const position = match ? Number(match[1]) : findTokenPosition(input, tokenMatch?.[1])
 
   return {
@@ -189,8 +191,8 @@ export function getErrorLocation(input, position) {
 }
 
 function preserveKnownEscapes(input, fallback) {
-  // JSON.stringify already keeps required backslash and quote escapes.
-  // This mode must never invent new unicode escapes when the input did not use them.
+  // JSON.stringify 已经会保留必要的反斜杠和引号转义。
+  // 该模式不能在输入未使用 unicode 转义时主动制造新的 unicode 转义。
   if (!/\\u[0-9a-fA-F]{4}/.test(input)) return fallback
   return fallback
 }
@@ -209,6 +211,7 @@ function unwrapEscapedStrings(value) {
   if (!/^".*"$/.test(trimmed)) return value
 
   try {
+    // API 日志中常见大 JSON 里嵌着 "\"hello\"" 这类字符串；这里只解包合法的 JSON 字符串字面量。
     const parsed = JSON.parse(trimmed)
     return typeof parsed === 'string' ? parsed : value
   } catch {

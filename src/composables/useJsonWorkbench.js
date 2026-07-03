@@ -15,8 +15,8 @@ import { matchesTreeNode } from '../utils/treeSearch'
 const STORAGE_KEY = 'workbench'
 
 /**
- * Main state holder for the JSON Formatter tool.
- * This composable is the lightweight equivalent of a small feature store.
+ * JSON 格式化工具的主状态容器。
+ * 这个 composable 相当于一个轻量的功能级 store。
  */
 export function useJsonWorkbench() {
   const stored = readStorage(STORAGE_KEY, null)
@@ -53,6 +53,7 @@ export function useJsonWorkbench() {
   watch(
     result,
     (value) => {
+      // 自动格式化只更新 Output 区；Input 区除非用户执行命令，否则不主动改写。
       if (value.status === 'invalid') {
         validationTone.value = 'invalid'
         outputText.value = ''
@@ -257,6 +258,7 @@ export function useJsonWorkbench() {
     const target = resolveNode(next, selectedNode.value.path)
     let newPath = ''
 
+    // 容器节点新增子节点，标量节点新增相邻兄弟节点，让混合结构的编辑行为更可预期。
     if (Array.isArray(target)) {
       target.push(null)
       newPath = `${selectedNode.value.path}[${target.length - 1}]`
@@ -467,6 +469,7 @@ function renameKeyByPath(root, path, newKey) {
 
   if (!parent || Array.isArray(parent) || key == null || !(key in parent) || newKey in parent) return ''
 
+  // 按原插入顺序重建对象，避免重命名 key 后节点在树视图中跳位置。
   const entries = Object.entries(parent)
   Object.keys(parent).forEach((item) => delete parent[item])
   entries.forEach(([entryKey, value]) => {
@@ -480,6 +483,8 @@ function parsePath(path) {
   const parts = []
   let index = 1
 
+  // 解析 treeService 生成的 JSONPath 子集：$.safeKey、$["odd-key"] 和 $[0]。
+  // 这里不引入完整 JSONPath 依赖，保持树编辑逻辑轻量。
   while (index < path.length) {
     if (path[index] === '.') {
       const nextBracket = path.indexOf('[', index + 1)
@@ -524,6 +529,7 @@ function joinParsedPath(parts, key) {
 }
 
 function parseTreeDraft(value, type) {
+  // 树节点内联编辑拿到的是 textContent，这里在语义明确时转回原 JSON 类型。
   if (type === 'string') return stripQuotes(value)
   if (type === 'number') {
     const parsed = Number(value)

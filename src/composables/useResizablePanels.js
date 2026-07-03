@@ -5,8 +5,8 @@ const STORAGE_KEY = 'panel-widths'
 const DEFAULT = [48, 52]
 
 /**
- * Manage two resizable workspace columns.
- * Widths are stored as percentages so resizing survives viewport changes.
+ * 管理工作区的两列可拖拽宽度。
+ * 宽度按比例保存，避免窗口尺寸变化后布局失真。
  */
 export function useResizablePanels() {
   const widths = ref(readStorage(STORAGE_KEY, DEFAULT))

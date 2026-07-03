@@ -184,6 +184,7 @@ function openTreeContext(payload) {
   const node = payload?.node ?? payload
   if (!node) return
   selectNode(node)
+  // 将右键菜单限制在视口内，避免靠近边缘时操作按钮跑出屏幕。
   contextMenu.value = {
     node,
     x: Math.min(payload?.x ?? 0, window.innerWidth - 176),
@@ -277,6 +278,7 @@ function inferJsonPath(value, targetLine) {
   const lines = value.split(/\r\n|\r|\n/)
   const stack = []
 
+  // 根据格式化 JSON 的缩进推断当前位置路径。它只是搜索导航提示，不是完整解析器。
   for (let index = 0; index < Math.min(targetLine, lines.length); index += 1) {
     const raw = lines[index]
     const trimmed = raw.trim()

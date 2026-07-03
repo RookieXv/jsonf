@@ -1,6 +1,6 @@
 /**
- * Convert JSON values to a render-friendly tree model.
- * The model is intentionally plain so it can later power search, copy, and compare tools.
+ * 将 JSON 值转换成适合渲染的树模型。
+ * 模型刻意保持简单，方便后续复用到搜索、复制和对比工具。
  */
 export function buildTree(value, key = '$', path = '$') {
   const type = getJsonType(value)

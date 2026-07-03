@@ -5,7 +5,7 @@ import { readStorage, writeStorage } from '../utils/storage'
 const STORAGE_KEY = 'preferences'
 
 /**
- * User-facing preferences shared across the tool platform shell.
+ * 工具平台外壳共享的用户偏好设置。
  */
 export function usePreferences() {
   const stored = readStorage(STORAGE_KEY, {})

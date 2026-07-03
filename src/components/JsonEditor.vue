@@ -78,6 +78,7 @@ function onScroll(event) {
 }
 
 function onWheel(event) {
+  // 覆盖层可见但不负责滚动，因此把滚轮位移转交给真正持有滚动状态的 textarea。
   if (!textareaRef.value || event.target === textareaRef.value) return
   textareaRef.value.scrollTop += event.deltaY
   textareaRef.value.scrollLeft += event.deltaX
@@ -99,6 +100,7 @@ function updateCursorLine(event) {
 
 function selectText(query, direction = 1) {
   if (!query || !textareaRef.value) return 0
+  // 搜索基于源文本位置；选中前先展开，避免折叠区域隐藏当前命中项。
   expandAll(false)
   const matches = findMatches(props.modelValue, query)
   if (!matches.length) return 0
@@ -177,6 +179,7 @@ function scrollSelectionIntoView(index) {
 }
 
 function highlightJson(value, query = '') {
+  // 语法高亮渲染在透明 textarea 背后的 inert pre 中，textarea 仍是可访问的真实编辑面。
   return escapeHtml(value).replace(
     /("(?:\\.|[^"\\])*"\s*:|"(?:\\.|[^"\\])*"|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
     (token) => {
@@ -193,6 +196,7 @@ function collectFoldRanges(linesValue) {
   const stack = []
   const ranges = []
 
+  // 编辑器主要处理格式化后的 JSON，按括号所在行匹配即可实现轻量折叠，避免热路径引入解析器。
   linesValue.forEach((line, index) => {
     if (/:\s*[\[{]\s*$|^[\s]*[\[{]\s*$/.test(line)) {
       stack.push(index + 1)
