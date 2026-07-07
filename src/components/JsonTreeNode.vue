@@ -53,6 +53,20 @@ function selectNode() {
   emit('select', props.node)
 }
 
+function selectInlineText(event) {
+  selectNode()
+  const target = event.currentTarget
+  requestAnimationFrame(() => {
+    if (!target) return
+    target.focus({ preventScroll: true })
+    const selection = window.getSelection()
+    const range = document.createRange()
+    range.selectNodeContents(target)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  })
+}
+
 function commitKey(event) {
   const value = event.target.textContent.trim()
   emit('action', { type: 'edit-key', node: props.node, value })
@@ -68,6 +82,13 @@ function commitValue(event) {
 function commitOnEnter(event, commit) {
   event.preventDefault()
   commit(event)
+}
+
+function selectRowOnKeyboard(event) {
+  if (event.target !== event.currentTarget) return
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  selectNode()
 }
 
 function isSameOrAncestorPath(path, target) {
@@ -98,12 +119,15 @@ function escapeRegExp(value) {
 
 <template>
   <div class="tree-node">
-    <button
+    <div
       class="tree-row"
+      role="button"
+      tabindex="0"
       :class="{ selected: isSelected, matched: isMatched }"
       :data-node-id="node.id"
       :style="{ paddingLeft: `${depth * 14 + 8}px` }"
       @click="selectNode"
+      @keydown="selectRowOnKeyboard"
       @contextmenu.prevent="$emit('context', { node, x: $event.clientX, y: $event.clientY })"
     >
       <span class="tree-actions" @click.stop>
@@ -119,22 +143,22 @@ function escapeRegExp(value) {
         class="tree-key"
         :contenteditable="node.path !== '$' && !/^\\d+$/.test(String(node.key))"
         spellcheck="false"
-        @click.stop="selectNode"
+        @mousedown.stop.prevent="selectInlineText"
         @blur="commitKey"
         @keydown.enter="commitOnEnter($event, commitKey)"
         v-html="highlightedLabel"
       />
       <span class="type-badge">{{ node.type }}</span>
       <span
-        class="tree-summary"
+        :class="['tree-summary', `tree-summary-${node.type}`]"
         :contenteditable="!hasChildren"
         spellcheck="false"
-        @click.stop="selectNode"
+        @mousedown.stop.prevent="selectInlineText"
         @blur="commitValue"
         @keydown.enter="commitOnEnter($event, commitValue)"
         v-html="highlightedSummary"
       />
-    </button>
+    </div>
 
     <div v-if="hasChildren && open">
       <JsonTreeNode

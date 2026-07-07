@@ -120,6 +120,8 @@ function translateNotice(value) {
     'repair-failed': t.value.notices.repairFailed,
     loaded: t.value.notices.loaded,
     downloaded: t.value.notices.downloaded,
+    undo: t.value.notices.undo,
+    redo: t.value.notices.redo,
     'node-added': t.value.notices.nodeAdded,
     'node-deleted': t.value.notices.nodeDeleted,
     'node-extracted': t.value.notices.nodeExtracted,
@@ -249,6 +251,27 @@ function toggleOutputFold() {
   outputFolded.value = !outputFolded.value
 }
 
+function handleUndoKey(event) {
+  const isUndo = (event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'z' && !event.shiftKey
+  const isRedo =
+    (event.metaKey || event.ctrlKey) &&
+    !event.altKey &&
+    ((event.key.toLowerCase() === 'z' && event.shiftKey) || event.key.toLowerCase() === 'y')
+
+  if (!isUndo && !isRedo) return
+  if (isTextEditingTarget(event.target)) return
+
+  const handled = isRedo ? workbench.redo() : workbench.undo()
+  if (handled) event.preventDefault()
+}
+
+function isTextEditingTarget(target) {
+  if (!target) return false
+  const element = target instanceof Element ? target : null
+  if (!element) return false
+  return ['TEXTAREA', 'INPUT'].includes(element.tagName) || element.closest('[contenteditable="true"]')
+}
+
 watch(
   () => workbench.outputQuery.value,
   (query) => {
@@ -302,7 +325,7 @@ function inferJsonPath(value, targetLine) {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" @keydown.capture="handleUndoKey">
     <header class="topbar">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
@@ -399,14 +422,27 @@ function inferJsonPath(value, targetLine) {
 
       <div class="command-group command-group--right">
         <label class="switch-control">
-          <input v-model="workbench.preserveEscapes.value" type="checkbox" />
+          <input
+            :checked="workbench.preserveEscapes.value"
+            type="checkbox"
+            @change="workbench.setPreserveEscapes($event.target.checked)"
+          />
           <span>{{ t.commands.preserveEscapes }}</span>
         </label>
         <label class="switch-control">
-          <input v-model="workbench.autoFormat.value" type="checkbox" />
+          <input
+            :checked="workbench.autoFormat.value"
+            type="checkbox"
+            @change="workbench.setAutoFormat($event.target.checked)"
+          />
           <span>{{ t.commands.autoFormat }}</span>
         </label>
-        <select v-model="workbench.indent.value" class="compact-select" :aria-label="t.status.indent">
+        <select
+          :value="workbench.indent.value"
+          class="compact-select"
+          :aria-label="t.status.indent"
+          @change="workbench.setIndent($event.target.value)"
+        >
           <option v-for="option in indentOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
@@ -494,6 +530,10 @@ function inferJsonPath(value, targetLine) {
         <header class="panel-header">
           <div>
             <p class="panel-kicker">{{ t.editor.output }}</p>
+            <p class="panel-subtitle output-subtitle">
+              <Search :size="13" />
+              {{ t.editor.outputHint }}
+            </p>
           </div>
           <div class="output-tools">
             <div class="segmented-control">
@@ -501,7 +541,7 @@ function inferJsonPath(value, targetLine) {
                 v-for="mode in ['json', 'tree']"
                 :key="mode"
                 :class="{ active: workbench.viewMode.value === mode }"
-                @click="workbench.viewMode.value = mode"
+                @click="workbench.setViewMode(mode)"
               >
                 {{ t.modes[mode] }}
               </button>
@@ -531,7 +571,7 @@ function inferJsonPath(value, targetLine) {
               :class="{ active: workbench.sortOutputKeys.value }"
               :title="t.commands.sortKeys"
               :aria-label="t.commands.sortKeys"
-              @click="workbench.sortOutputKeys.value = !workbench.sortOutputKeys.value"
+              @click="workbench.toggleSortOutputKeys"
             >
               <ArrowDownAZ :size="13" />
             </button>
@@ -688,7 +728,7 @@ function inferJsonPath(value, targetLine) {
       :line-wrap="workbench.lineWrap.value"
       :line-numbers="workbench.lineNumbers.value"
       @close="preferences.settingsOpen.value = false"
-      @update:indent="workbench.indent.value = $event"
+      @update:indent="workbench.setIndent($event)"
       @update:trailing-newline="workbench.trailingNewline.value = $event"
       @update:font-size="workbench.fontSize.value = $event"
       @update:line-wrap="workbench.lineWrap.value = $event"

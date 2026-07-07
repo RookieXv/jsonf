@@ -86,6 +86,11 @@ function onWheel(event) {
   scrollLeft.value = textareaRef.value.scrollLeft
 }
 
+function focusEditor(event) {
+  if (!textareaRef.value || event.target === textareaRef.value) return
+  textareaRef.value.focus()
+}
+
 function onInput(event) {
   foldedRanges.value = []
   updateCursorLine(event)
@@ -303,6 +308,7 @@ function escapeRegExp(value) {
       :class="{ 'is-wrapped': lineWrap, 'has-lines': lineNumbers }"
       :style="{ '--code-size': `${fontSize}px` }"
       @wheel="onWheel"
+      @mousedown="focusEditor"
     >
       <pre
         v-if="lineNumbers"
@@ -327,44 +333,46 @@ function escapeRegExp(value) {
           @click.stop="toggleFold(marker)"
         />
       </div>
-      <span
-        v-for="line in searchVisibleLines"
-        :key="`search-${line.visibleLine}`"
-        class="search-line-highlight"
-        :style="{
-          top: `calc(14px + ${(line.visibleLine - 1) * fontSize * 1.62}px - ${scrollTop}px)`,
-          height: `${fontSize * 1.62}px`,
-        }"
-        aria-hidden="true"
-      />
-      <span
-        v-if="activeVisibleLine"
-        class="cursor-line-highlight"
-        :style="{
-          top: `calc(14px + ${(activeVisibleLine - 1) * fontSize * 1.62}px - ${scrollTop}px)`,
-          height: `${fontSize * 1.62}px`,
-        }"
-        aria-hidden="true"
-      />
-      <pre
-        class="code-highlight"
-        :style="{ transform: `translate(${-scrollLeft}px, ${-scrollTop}px)` }"
-        aria-hidden="true"
-        v-html="highlightedHtml"
-      />
-      <textarea
-        ref="textareaRef"
-        class="code-input"
-        spellcheck="false"
-        :readonly="readonly"
-        :placeholder="placeholder"
-        :value="modelValue"
-        @scroll="onScroll"
-        @click="updateCursorLine"
-        @keyup="updateCursorLine"
-        @select="updateCursorLine"
-        @input="onInput"
-      />
+      <div class="code-viewport">
+        <span
+          v-for="line in searchVisibleLines"
+          :key="`search-${line.visibleLine}`"
+          class="search-line-highlight"
+          :style="{
+            top: `calc(14px + ${(line.visibleLine - 1) * fontSize * 1.62}px - ${scrollTop}px)`,
+            height: `${fontSize * 1.62}px`,
+          }"
+          aria-hidden="true"
+        />
+        <span
+          v-if="activeVisibleLine"
+          class="cursor-line-highlight"
+          :style="{
+            top: `calc(14px + ${(activeVisibleLine - 1) * fontSize * 1.62}px - ${scrollTop}px)`,
+            height: `${fontSize * 1.62}px`,
+          }"
+          aria-hidden="true"
+        />
+        <pre
+          class="code-highlight"
+          :style="{ transform: `translate(${-scrollLeft}px, ${-scrollTop}px)` }"
+          aria-hidden="true"
+          v-html="highlightedHtml"
+        />
+        <textarea
+          ref="textareaRef"
+          class="code-input"
+          spellcheck="false"
+          :readonly="readonly"
+          :placeholder="placeholder"
+          :value="modelValue"
+          @scroll="onScroll"
+          @click="updateCursorLine"
+          @keyup="updateCursorLine"
+          @select="updateCursorLine"
+          @input="onInput"
+        />
+      </div>
     </div>
   </section>
 </template>

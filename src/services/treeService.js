@@ -42,12 +42,8 @@ export function getJsonType(value) {
 function getSummary(value, type) {
   if (type === 'object') return `{${Object.keys(value).length}}`
   if (type === 'array') return `[${value.length}]`
-  if (type === 'string') return `"${truncate(value, 42)}"`
+  if (type === 'string') return `"${value}"`
   return String(value)
-}
-
-function truncate(value, max) {
-  return value.length > max ? `${value.slice(0, max)}...` : value
 }
 
 function joinPath(path, key) {

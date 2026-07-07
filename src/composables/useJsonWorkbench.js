@@ -13,6 +13,8 @@ import { readStorage, removeStorage, writeStorage } from '../utils/storage'
 import { matchesTreeNode } from '../utils/treeSearch'
 
 const STORAGE_KEY = 'workbench'
+const STORAGE_VERSION = 2
+const HISTORY_LIMIT = 100
 
 /**
  * JSON 格式化工具的主状态容器。
@@ -20,19 +22,20 @@ const STORAGE_KEY = 'workbench'
  */
 export function useJsonWorkbench() {
   const stored = readStorage(STORAGE_KEY, null)
+  const hasCurrentPreferences = stored?.version === STORAGE_VERSION
 
   const input = ref(stored?.input ?? sampleJson)
   const outputText = ref(stored?.outputText ?? '')
-  const viewMode = ref(stored?.viewMode ?? 'json')
-  const preserveEscapes = ref(stored?.preserveEscapes ?? true)
-  const autoFormat = ref(stored?.autoFormat ?? true)
+  const viewMode = ref(hasCurrentPreferences ? (stored?.viewMode ?? 'tree') : 'tree')
+  const preserveEscapes = ref(hasCurrentPreferences ? (stored?.preserveEscapes ?? false) : false)
+  const autoFormat = ref(hasCurrentPreferences ? (stored?.autoFormat ?? true) : true)
   const indent = ref(stored?.indent ?? '2')
   const sortInputKeys = ref(stored?.sortInputKeys ?? false)
   const sortOutputKeys = ref(stored?.sortOutputKeys ?? stored?.sortKeys ?? false)
   const inputBeforeSort = ref(stored?.inputBeforeSort ?? '')
   const inputBeforeEscape = ref(stored?.inputBeforeEscape ?? '')
   const trailingNewline = ref(stored?.trailingNewline ?? false)
-  const lineWrap = ref(stored?.lineWrap ?? false)
+  const lineWrap = ref(hasCurrentPreferences ? (stored?.lineWrap ?? true) : true)
   const lineNumbers = ref(stored?.lineNumbers ?? true)
   const fontSize = ref(stored?.fontSize ?? 13)
   const treeQuery = ref('')
@@ -41,6 +44,9 @@ export function useJsonWorkbench() {
   const notice = ref('')
   const noticeTone = ref('info')
   const validationTone = ref('')
+  const undoStack = ref([])
+  const redoStack = ref([])
+  let restoringHistory = false
 
   const result = computed(() =>
     analyzeJson(input.value, {
@@ -66,12 +72,21 @@ export function useJsonWorkbench() {
       if (value.status === 'valid' && validationTone.value === 'invalid') {
         validationTone.value = ''
       }
-      if (value.status === 'valid' && autoFormat.value) {
+      if (value.status === 'valid' && autoFormat.value && !restoringHistory) {
         outputText.value = value.pretty
       }
     },
     { immediate: true },
   )
+
+  watch(autoFormat, (enabled) => {
+    if (enabled && result.value.status === 'valid' && !restoringHistory) {
+      outputText.value = result.value.pretty
+    }
+  })
+
+  const canUndo = computed(() => undoStack.value.length > 0)
+  const canRedo = computed(() => redoStack.value.length > 0)
 
   const output = computed(() => outputText.value)
 
@@ -112,6 +127,7 @@ export function useJsonWorkbench() {
     ],
     () => {
       writeStorage(STORAGE_KEY, {
+        version: STORAGE_VERSION,
         input: input.value,
         outputText: outputText.value,
         viewMode: viewMode.value,
@@ -136,7 +152,8 @@ export function useJsonWorkbench() {
       markInvalidAction()
       return
     }
-    input.value = applyTrailingNewline(result.value.pretty)
+    pushUndoSnapshot()
+    input.value = applyTrailingNewline(result.value.standardPretty)
     syncOutputFromInput()
     logger.info('format json', { bytes: input.value.length })
   }
@@ -146,6 +163,7 @@ export function useJsonWorkbench() {
       markInvalidAction()
       return
     }
+    pushUndoSnapshot()
     input.value = applyTrailingNewline(result.value.minified)
     syncOutputFromInput()
     logger.info('minify json')
@@ -157,12 +175,14 @@ export function useJsonWorkbench() {
       return
     }
     if (inputBeforeEscape.value) {
+      pushUndoSnapshot()
       input.value = inputBeforeEscape.value
       inputBeforeEscape.value = ''
       syncOutputFromInput()
       logger.info('restore escaped input')
       return
     }
+    pushUndoSnapshot()
     inputBeforeEscape.value = input.value
     input.value = result.value.escaped
     syncOutputFromInput()
@@ -175,27 +195,60 @@ export function useJsonWorkbench() {
     logger.info('validate json', { status: result.value.status })
   }
 
+  function setPreserveEscapes(value) {
+    if (preserveEscapes.value === value) return
+    pushUndoSnapshot()
+    preserveEscapes.value = value
+  }
+
+  function setAutoFormat(value) {
+    if (autoFormat.value === value) return
+    pushUndoSnapshot()
+    autoFormat.value = value
+  }
+
+  function setIndent(value) {
+    if (indent.value === value) return
+    pushUndoSnapshot()
+    indent.value = value
+  }
+
+  function setViewMode(value) {
+    if (viewMode.value === value) return
+    pushUndoSnapshot()
+    viewMode.value = value
+  }
+
+  function toggleSortOutputKeys() {
+    pushUndoSnapshot()
+    sortOutputKeys.value = !sortOutputKeys.value
+  }
+
   function sortInput() {
     if (result.value.status !== 'valid') {
       markInvalidAction()
       return
     }
     if (sortInputKeys.value && inputBeforeSort.value) {
+      pushUndoSnapshot()
       input.value = inputBeforeSort.value
       inputBeforeSort.value = ''
       sortInputKeys.value = false
       logger.info('restore input order')
       return
     }
+    pushUndoSnapshot()
     inputBeforeSort.value = input.value
-    input.value = formatJsonValue(sortObjectKeys(result.value.parsed), indent.value)
+    input.value = formatJsonValue(sortObjectKeys(result.value.rawParsed), indent.value)
     sortInputKeys.value = true
     logger.info('sort input keys')
   }
 
   function repair() {
     try {
-      input.value = repairJson(input.value)
+      const repaired = repairJson(input.value)
+      pushUndoSnapshot()
+      input.value = repaired
       syncOutputFromInput()
       showNotice('repair')
       logger.info('repair json success')
@@ -224,17 +277,20 @@ export function useJsonWorkbench() {
       markInvalidAction()
       return
     }
+    pushUndoSnapshot()
     syncOutputFromInput()
   }
 
   function sendOutputToInput() {
     if (!outputText.value) return
+    pushUndoSnapshot()
     input.value = outputText.value
     logger.info('send output to input')
   }
 
   function swapInputOutput() {
     if (!outputText.value) return
+    pushUndoSnapshot()
     const nextInput = outputText.value
     outputText.value = input.value
     input.value = nextInput
@@ -254,7 +310,7 @@ export function useJsonWorkbench() {
 
   function addNode() {
     if (!selectedNode.value || result.value.status !== 'valid') return
-    const next = structuredClone(result.value.parsed)
+    const next = structuredClone(result.value.rawParsed)
     const target = resolveNode(next, selectedNode.value.path)
     let newPath = ''
 
@@ -271,6 +327,7 @@ export function useJsonWorkbench() {
       if (!newPath) return
     }
 
+    pushUndoSnapshot()
     input.value = formatJsonValue(next, indent.value)
     selectedNodeId.value = newPath
     showNotice('node-added')
@@ -279,6 +336,7 @@ export function useJsonWorkbench() {
 
   function extractSelectedNode() {
     if (!selectedNode.value) return
+    pushUndoSnapshot()
     outputText.value = formatJsonValue(selectedNode.value.value, indent.value)
     viewMode.value = 'json'
     showNotice('node-extracted')
@@ -287,18 +345,20 @@ export function useJsonWorkbench() {
 
   function updateSelectedNodeValue(rawValue) {
     if (!selectedNode.value || selectedNode.value.children.length || result.value.status !== 'valid') return
-    const next = structuredClone(result.value.parsed)
+    const next = structuredClone(result.value.rawParsed)
     const parsed = parseTreeDraft(rawValue, selectedNode.value.type)
     setByPath(next, selectedNode.value.path, parsed)
+    pushUndoSnapshot()
     input.value = formatJsonValue(next, indent.value)
     logger.info('edit node value', { path: selectedNode.value.path })
   }
 
   function renameSelectedNodeKey(newKey) {
     if (!selectedNode.value || !newKey || selectedNode.value.path === '$' || result.value.status !== 'valid') return
-    const next = structuredClone(result.value.parsed)
+    const next = structuredClone(result.value.rawParsed)
     const nextPath = renameKeyByPath(next, selectedNode.value.path, newKey)
     if (!nextPath) return
+    pushUndoSnapshot()
     input.value = formatJsonValue(next, indent.value)
     selectedNodeId.value = nextPath
     logger.info('rename node key', { path: nextPath })
@@ -306,9 +366,10 @@ export function useJsonWorkbench() {
 
   function deleteNode() {
     if (!selectedNode.value || selectedNode.value.path === '$' || result.value.status !== 'valid') return
-    const next = structuredClone(result.value.parsed)
+    const next = structuredClone(result.value.rawParsed)
     const removed = deleteByPath(next, selectedNode.value.path)
     if (!removed) return
+    pushUndoSnapshot()
     selectedNodeId.value = '$'
     input.value = formatJsonValue(next, indent.value)
     showNotice('node-deleted')
@@ -316,6 +377,7 @@ export function useJsonWorkbench() {
   }
 
   function clear() {
+    pushUndoSnapshot()
     input.value = ''
     outputText.value = ''
     outputQuery.value = ''
@@ -328,8 +390,9 @@ export function useJsonWorkbench() {
   }
 
   function loadText(text) {
+    pushUndoSnapshot()
     input.value = text
-    outputText.value = ''
+    if (!autoFormat.value) outputText.value = ''
     logger.info('load text', { bytes: text.length })
   }
 
@@ -347,6 +410,26 @@ export function useJsonWorkbench() {
     window.setTimeout(() => {
       if (notice.value === message) notice.value = ''
     }, 1800)
+  }
+
+  function undo() {
+    const snapshot = undoStack.value.pop()
+    if (!snapshot) return false
+    redoStack.value.push(captureSnapshot())
+    applySnapshot(snapshot)
+    showNotice('undo')
+    logger.info('undo workbench')
+    return true
+  }
+
+  function redo() {
+    const snapshot = redoStack.value.pop()
+    if (!snapshot) return false
+    undoStack.value.push(captureSnapshot())
+    applySnapshot(snapshot)
+    showNotice('redo')
+    logger.info('redo workbench')
+    return true
   }
 
   return {
@@ -375,14 +458,21 @@ export function useJsonWorkbench() {
     notice,
     noticeTone,
     validationTone,
+    canUndo,
+    canRedo,
     inputLineCount,
     outputLineCount,
     format,
     minify,
     validate,
+    setPreserveEscapes,
+    setAutoFormat,
+    setIndent,
+    setViewMode,
     repair,
     escapeInput,
     sortInput,
+    toggleSortOutputKeys,
     sendInputToOutput,
     sendOutputToInput,
     swapInputOutput,
@@ -397,6 +487,58 @@ export function useJsonWorkbench() {
     loadText,
     updateOutput,
     showNotice,
+    undo,
+    redo,
+  }
+
+  function pushUndoSnapshot() {
+    const snapshot = captureSnapshot()
+    const last = undoStack.value[undoStack.value.length - 1]
+    if (last && snapshotsEqual(last, snapshot)) return
+    undoStack.value = [...undoStack.value.slice(-(HISTORY_LIMIT - 1)), snapshot]
+    redoStack.value = []
+  }
+
+  function captureSnapshot() {
+    return {
+      input: input.value,
+      outputText: outputText.value,
+      viewMode: viewMode.value,
+      preserveEscapes: preserveEscapes.value,
+      autoFormat: autoFormat.value,
+      indent: indent.value,
+      sortInputKeys: sortInputKeys.value,
+      sortOutputKeys: sortOutputKeys.value,
+      inputBeforeSort: inputBeforeSort.value,
+      inputBeforeEscape: inputBeforeEscape.value,
+      treeQuery: treeQuery.value,
+      outputQuery: outputQuery.value,
+      selectedNodeId: selectedNodeId.value,
+    }
+  }
+
+  function applySnapshot(snapshot) {
+    restoringHistory = true
+    input.value = snapshot.input
+    outputText.value = snapshot.outputText
+    viewMode.value = snapshot.viewMode
+    preserveEscapes.value = snapshot.preserveEscapes
+    autoFormat.value = snapshot.autoFormat
+    indent.value = snapshot.indent
+    sortInputKeys.value = snapshot.sortInputKeys
+    sortOutputKeys.value = snapshot.sortOutputKeys
+    inputBeforeSort.value = snapshot.inputBeforeSort
+    inputBeforeEscape.value = snapshot.inputBeforeEscape
+    treeQuery.value = snapshot.treeQuery
+    outputQuery.value = snapshot.outputQuery
+    selectedNodeId.value = snapshot.selectedNodeId
+    queueMicrotask(() => {
+      restoringHistory = false
+    })
+  }
+
+  function snapshotsEqual(left, right) {
+    return Object.keys(left).every((key) => left[key] === right[key])
   }
 }
 

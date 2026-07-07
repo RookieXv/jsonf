@@ -27,17 +27,20 @@ export function analyzeJson(input, options) {
     const parsed = JSON.parse(trimmed)
     const normalized = options.preserveEscapes ? parsed : unwrapEscapedStrings(parsed)
     const sorted = options.sortOutputKeys ? sortObjectKeys(normalized) : normalized
-    // 所有输出形态都来自同一份解析结果，避免切换模式时重复解析或内容漂移。
+    // raw* 结果服务 Input 命令；展示结果服务 Output/树，避免展示型反转义污染原始输入区。
+    const standardPretty = stringifyJson(parsed, options.indent)
     const pretty = formatJson(sorted, options.indent, options.preserveEscapes, input)
-    const minified = JSON.stringify(sorted)
-    const escaped = escapeJsonOutput(pretty)
+    const minified = JSON.stringify(parsed)
+    const escaped = escapeJsonOutput(standardPretty)
     const raw = options.preserveEscapes ? preserveRawEscapes(input, pretty) : pretty
     const parseTime = performance.now() - startedAt
 
     return buildResult({
       input,
       status: 'valid',
+      rawParsed: parsed,
       parsed: sorted,
+      standardPretty,
       pretty,
       minified,
       escaped,
@@ -78,8 +81,10 @@ export function getNodePreview(value) {
 function buildResult(partial) {
   const base = {
     status: 'idle',
+    rawParsed: null,
     parsed: null,
     pretty: '',
+    standardPretty: '',
     minified: '',
     raw: '',
     escaped: '',
@@ -114,8 +119,12 @@ export function sortObjectKeys(value) {
 }
 
 function formatJson(value, indent, preserveEscapes, originalInput) {
-  const formatted = JSON.stringify(value, null, indent === 'tab' ? '\t' : Number(indent))
-  return preserveEscapes ? preserveKnownEscapes(originalInput, formatted) : formatted
+  const formatted = stringifyJson(value, indent)
+  return preserveEscapes ? preserveKnownEscapes(originalInput, formatted) : loosenNestedJsonStrings(formatted)
+}
+
+function stringifyJson(value, indent) {
+  return JSON.stringify(value, null, indent === 'tab' ? '\t' : Number(indent))
 }
 
 function preserveRawEscapes(input, fallback) {
@@ -191,10 +200,202 @@ export function getErrorLocation(input, position) {
 }
 
 function preserveKnownEscapes(input, fallback) {
-  // JSON.stringify 已经会保留必要的反斜杠和引号转义。
-  // 该模式不能在输入未使用 unicode 转义时主动制造新的 unicode 转义。
-  if (!/\\u[0-9a-fA-F]{4}/.test(input)) return fallback
-  return fallback
+  const escapedStrings = collectEscapedStringLiterals(input)
+  if (!escapedStrings.size) return fallback
+  return replaceStringLiterals(fallback, escapedStrings)
+}
+
+function collectEscapedStringLiterals(input) {
+  const literals = new Map()
+  let index = 0
+
+  while (index < input.length) {
+    if (input[index] !== '"') {
+      index += 1
+      continue
+    }
+
+    const end = findStringEnd(input, index)
+    if (end < 0) break
+
+    const token = input.slice(index, end + 1)
+    const inner = token.slice(1, -1)
+    if (hasEscapedDisplay(token)) {
+      try {
+        const parsed = JSON.parse(token)
+        if (typeof parsed === 'string' && !literals.has(parsed)) {
+          literals.set(parsed, inner)
+        }
+      } catch {
+        // Invalid string tokens are ignored; JSON.parse will report the real input error elsewhere.
+      }
+    }
+
+    index = end + 1
+  }
+
+  return literals
+}
+
+function replaceStringLiterals(value, literals) {
+  let output = ''
+  let index = 0
+
+  while (index < value.length) {
+    if (value[index] !== '"') {
+      output += value[index]
+      index += 1
+      continue
+    }
+
+    const end = findStringEnd(value, index)
+    if (end < 0) {
+      output += value.slice(index)
+      break
+    }
+
+    const token = value.slice(index, end + 1)
+    output += restoreStringLiteral(token, literals)
+    index = end + 1
+  }
+
+  return output
+}
+
+function restoreStringLiteral(token, literals) {
+  try {
+    const parsed = JSON.parse(token)
+    const preserved = literals.get(parsed)
+    return typeof preserved === 'string' ? `"${preserved}"` : token
+  } catch {
+    return token
+  }
+}
+
+function loosenNestedJsonStrings(value) {
+  let output = ''
+  let index = 0
+
+  while (index < value.length) {
+    if (value[index] !== '"') {
+      output += value[index]
+      index += 1
+      continue
+    }
+
+    const end = findStringEnd(value, index)
+    if (end < 0) {
+      output += value.slice(index)
+      break
+    }
+
+    const token = value.slice(index, end + 1)
+    output += loosenStringToken(token)
+    index = end + 1
+  }
+
+  return output
+}
+
+function findStringEnd(value, start) {
+  let escaped = false
+
+  for (let index = start + 1; index < value.length; index += 1) {
+    const char = value[index]
+
+    if (escaped) {
+      escaped = false
+      continue
+    }
+
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+
+    if (char === '"') return index
+  }
+
+  return -1
+}
+
+function loosenStringToken(token) {
+  try {
+    const parsed = JSON.parse(token)
+    if (typeof parsed !== 'string') return token
+    if (!hasEscapedDisplay(token) && !isNestedJsonString(parsed)) return token
+    return `"${escapeLooseDisplayString(parsed)}"`
+  } catch {
+    return token
+  }
+}
+
+function hasEscapedDisplay(token) {
+  return /\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})/.test(token)
+}
+
+function isNestedJsonString(value) {
+  const trimmed = value.trim()
+  const looksLikeJson =
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+
+  if (!looksLikeJson) return false
+
+  try {
+    JSON.parse(trimmed)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function escapeLooseDisplayString(value) {
+  return decodeLooseTextEscapes(value)
+}
+
+function decodeLooseTextEscapes(value) {
+  return decodeHtmlEntities(value)
+    .replace(/\\\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)))
+    .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)))
+    .replace(/\\\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\\\n/g, '\n')
+    .replace(/\\\\r/g, '\r')
+    .replace(/\\r/g, '\r')
+    .replace(/\\\r/g, '\r')
+    .replace(/\\\\t/g, '\t')
+    .replace(/\\t/g, '\t')
+    .replace(/\\\\b/g, '\b')
+    .replace(/\\b/g, '\b')
+    .replace(/\\\\f/g, '\f')
+    .replace(/\\f/g, '\f')
+    .replace(/\\\\(["\\/])/g, '$1')
+    .replace(/\\(["\\/])/g, '$1')
+}
+
+function decodeHtmlEntities(value) {
+  let decoded = value
+
+  for (let index = 0; index < 3; index += 1) {
+    const next = decodeHtmlEntityPass(decoded)
+    if (next === decoded) return decoded
+    decoded = next
+  }
+
+  return decoded
+}
+
+function decodeHtmlEntityPass(value) {
+  return value
+    .replace(/&gt;/gi, '>')
+    .replace(/&lt;/gi, '<')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(Number.parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
 }
 
 function unwrapEscapedStrings(value) {
@@ -208,13 +409,13 @@ function unwrapEscapedStrings(value) {
   if (typeof value !== 'string') return value
 
   const trimmed = value.trim()
-  if (!/^".*"$/.test(trimmed)) return value
+  if (!/^".*"$/.test(trimmed)) return decodeLooseTextEscapes(value)
 
   try {
     // API 日志中常见大 JSON 里嵌着 "\"hello\"" 这类字符串；这里只解包合法的 JSON 字符串字面量。
     const parsed = JSON.parse(trimmed)
-    return typeof parsed === 'string' ? parsed : value
+    return typeof parsed === 'string' ? decodeLooseTextEscapes(parsed) : decodeLooseTextEscapes(value)
   } catch {
-    return value
+    return decodeLooseTextEscapes(value)
   }
 }
