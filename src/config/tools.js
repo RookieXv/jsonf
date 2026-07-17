@@ -1,4 +1,4 @@
-import { Braces, Binary, Columns3, FileJson, GitCompareArrows, MoreHorizontal } from '@lucide/vue'
+import { Braces, Binary, Clock3, Columns3, GitCompareArrows, MoreHorizontal } from '@lucide/vue'
 
 /**
  * 平台级工具注册表。
@@ -6,7 +6,7 @@ import { Braces, Binary, Columns3, FileJson, GitCompareArrows, MoreHorizontal } 
  */
 export const tools = [
   { key: 'formatter', icon: Braces },
-  { key: 'viewer', icon: FileJson, disabled: true },
+  { key: 'timestamp', icon: Clock3 },
   { key: 'compare', icon: GitCompareArrows, disabled: true },
   { key: 'converter', icon: Columns3, disabled: true },
   { key: 'encoders', icon: Binary, disabled: true },

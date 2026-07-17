@@ -31,6 +31,7 @@ import IconButton from './components/IconButton.vue'
 import JsonEditor from './components/JsonEditor.vue'
 import JsonTreeNode from './components/JsonTreeNode.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
+import TimestampTool from './components/TimestampTool.vue'
 import { LANGUAGES } from './config/i18n'
 import { tools } from './config/tools'
 import { useJsonWorkbench } from './composables/useJsonWorkbench'
@@ -325,7 +326,7 @@ function inferJsonPath(value, targetLine) {
 </script>
 
 <template>
-  <div class="app-shell" @keydown.capture="handleUndoKey">
+  <div class="app-shell" :class="{ 'app-shell--timestamp': currentTool === 'timestamp' }" @keydown.capture="handleUndoKey">
     <header class="topbar">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
@@ -361,7 +362,7 @@ function inferJsonPath(value, targetLine) {
           </select>
         </button>
         <IconButton :label="t.commands.theme" @click="preferences.cycleTheme">
-          <Sun v-if="preferences.theme.value === 'light'" :size="16" />
+          <Sun v-if="preferences.appliedTheme.value === 'light'" :size="16" />
           <Moon v-else :size="16" />
         </IconButton>
         <IconButton :label="t.commands.settings" @click="preferences.settingsOpen.value = true">
@@ -370,6 +371,7 @@ function inferJsonPath(value, targetLine) {
       </div>
     </header>
 
+    <template v-if="currentTool === 'formatter'">
     <section class="commandbar">
       <div class="command-group">
         <IconButton :label="t.commands.format" @click="workbench.format">
@@ -722,17 +724,22 @@ function inferJsonPath(value, targetLine) {
     <SettingsPanel
       :open="preferences.settingsOpen.value"
       :t="t"
+      :theme="preferences.theme.value"
       :indent="workbench.indent.value"
       :trailing-newline="workbench.trailingNewline.value"
       :font-size="workbench.fontSize.value"
       :line-wrap="workbench.lineWrap.value"
       :line-numbers="workbench.lineNumbers.value"
       @close="preferences.settingsOpen.value = false"
+      @update:theme="preferences.theme.value = $event"
       @update:indent="workbench.setIndent($event)"
       @update:trailing-newline="workbench.trailingNewline.value = $event"
       @update:font-size="workbench.fontSize.value = $event"
       @update:line-wrap="workbench.lineWrap.value = $event"
       @update:line-numbers="workbench.lineNumbers.value = $event"
     />
+    </template>
+
+    <TimestampTool v-else-if="currentTool === 'timestamp'" :language="preferences.language.value" />
   </div>
 </template>

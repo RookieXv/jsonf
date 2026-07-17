@@ -5,6 +5,7 @@ import { clearJsonfStorage } from '../utils/storage'
 defineProps({
   open: { type: Boolean, required: true },
   t: { type: Object, required: true },
+  theme: { type: String, required: true },
   indent: { type: String, required: true },
   trailingNewline: { type: Boolean, required: true },
   fontSize: { type: Number, required: true },
@@ -14,6 +15,7 @@ defineProps({
 
 const emit = defineEmits([
   'close',
+  'update:theme',
   'update:indent',
   'update:trailingNewline',
   'update:fontSize',
@@ -36,6 +38,15 @@ function clearCache() {
           <X :size="17" />
         </button>
       </header>
+
+      <label class="setting-row">
+        <span>{{ t.settings.theme }}</span>
+        <select :value="theme" @change="$emit('update:theme', $event.target.value)">
+          <option value="system">{{ t.settings.themeSystem }}</option>
+          <option value="light">{{ t.settings.themeLight }}</option>
+          <option value="dark">{{ t.settings.themeDark }}</option>
+        </select>
+      </label>
 
       <label class="setting-row">
         <span>{{ t.settings.indent }}</span>

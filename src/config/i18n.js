@@ -13,7 +13,7 @@ export const messages = {
     appTagline: '',
     tools: {
       formatter: 'JSON 格式化',
-      viewer: 'JSON 查看',
+      timestamp: '时间戳转换',
       compare: '对比',
       converter: '转换',
       encoders: '编码',
@@ -84,6 +84,10 @@ export const messages = {
     },
     settings: {
       title: '偏好设置',
+      theme: '主题',
+      themeSystem: '跟随系统',
+      themeLight: '浅色',
+      themeDark: '深色',
       indent: '缩进方式',
       sortKeys: '按 key 排序',
       trailingNewline: '末尾换行',
@@ -116,7 +120,7 @@ export const messages = {
     appTagline: '',
     tools: {
       formatter: 'JSON 格式化',
-      viewer: 'JSON 檢視',
+      timestamp: '時間戳轉換',
       compare: '比對',
       converter: '轉換',
       encoders: '編碼',
@@ -187,6 +191,10 @@ export const messages = {
     },
     settings: {
       title: '偏好設定',
+      theme: '主題',
+      themeSystem: '跟隨系統',
+      themeLight: '淺色',
+      themeDark: '深色',
       indent: '縮排方式',
       sortKeys: '按 key 排序',
       trailingNewline: '末尾換行',
@@ -219,7 +227,7 @@ export const messages = {
     appTagline: 'Local-first JSON workstation',
     tools: {
       formatter: 'JSON Formatter',
-      viewer: 'JSON Viewer',
+      timestamp: 'Timestamp',
       compare: 'Compare',
       converter: 'Converter',
       encoders: 'Encoders',
@@ -290,6 +298,10 @@ export const messages = {
     },
     settings: {
       title: 'Preferences',
+      theme: 'Theme',
+      themeSystem: 'Follow system',
+      themeLight: 'Light',
+      themeDark: 'Dark',
       indent: 'Indentation',
       sortKeys: 'Sort keys',
       trailingNewline: 'Trailing newline',
