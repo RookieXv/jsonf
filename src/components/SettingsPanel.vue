@@ -13,7 +13,7 @@ defineProps({
   lineNumbers: { type: Boolean, required: true },
 })
 
-const emit = defineEmits([
+defineEmits([
   'close',
   'update:theme',
   'update:indent',

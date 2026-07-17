@@ -8,8 +8,8 @@ import {
   sortObjectKeys,
 } from '../services/jsonService'
 import { buildTree, flattenTree } from '../services/treeService'
-import { logger } from '../utils/logger'
-import { readStorage, removeStorage, writeStorage } from '../utils/storage'
+import { logger } from '../../../utils/logger'
+import { readStorage, removeStorage, writeStorage } from '../../../utils/storage'
 import { matchesTreeNode } from '../utils/treeSearch'
 
 const STORAGE_KEY = 'workbench'

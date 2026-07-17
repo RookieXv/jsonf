@@ -27,17 +27,18 @@ import {
   WrapText,
 } from '@lucide/vue'
 import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import IconButton from './components/IconButton.vue'
-import JsonEditor from './components/JsonEditor.vue'
-import JsonTreeNode from './components/JsonTreeNode.vue'
+import JsonEditor from './features/json/components/JsonEditor.vue'
+import JsonTreeNode from './features/json/components/JsonTreeNode.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
-import TimestampTool from './components/TimestampTool.vue'
+import TimestampTool from './features/timestamp/components/TimestampTool.vue'
 import { LANGUAGES } from './config/i18n'
-import { tools } from './config/tools'
-import { useJsonWorkbench } from './composables/useJsonWorkbench'
+import { tools } from './app/tools'
+import { useJsonWorkbench } from './features/json/composables/useJsonWorkbench'
 import { usePreferences } from './composables/usePreferences'
-import { useResizablePanels } from './composables/useResizablePanels'
-import { getNodePreview } from './services/jsonService'
+import { useResizablePanels } from './features/json/composables/useResizablePanels'
+import { getNodePreview } from './features/json/services/jsonService'
 import { logger } from './utils/logger'
 
 const workbench = useJsonWorkbench()
@@ -58,10 +59,13 @@ const treeRevealId = ref('')
 const jsonPath = ref('$')
 
 const t = preferences.t
-const currentTool = ref('formatter')
+const route = useRoute()
+const router = useRouter()
+const currentTool = computed(() => route.meta.tool ?? 'formatter')
 
 function selectTool(tool) {
-  currentTool.value = tool
+  const target = tools.find((item) => item.key === tool)
+  if (target?.path && route.path !== target.path) router.push(target.path)
   if (tool === 'timestamp') preferences.settingsOpen.value = false
 }
 

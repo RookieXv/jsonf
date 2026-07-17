@@ -5,8 +5,8 @@ import { Braces, Binary, Clock3, Columns3, GitCompareArrows, MoreHorizontal } fr
  * 后续工具可以在这里增加路由或动作，不需要改动外壳布局。
  */
 export const tools = [
-  { key: 'formatter', icon: Braces },
-  { key: 'timestamp', icon: Clock3 },
+  { key: 'formatter', path: '/json', icon: Braces },
+  { key: 'timestamp', path: '/timestamp', icon: Clock3 },
   { key: 'compare', icon: GitCompareArrows, disabled: true },
   { key: 'converter', icon: Columns3, disabled: true },
   { key: 'encoders', icon: Binary, disabled: true },

@@ -16,9 +16,7 @@ export function buildTree(value, key = '$', path = '$') {
   }
 
   if (type === 'object') {
-    node.children = Object.keys(value).map((childKey) =>
-      buildTree(value[childKey], childKey, joinPath(path, childKey)),
-    )
+    node.children = Object.keys(value).map((childKey) => buildTree(value[childKey], childKey, joinPath(path, childKey)))
   }
 
   if (type === 'array') {

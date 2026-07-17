@@ -1,5 +1,5 @@
 import { computed, ref, watch } from 'vue'
-import { readStorage, writeStorage } from '../utils/storage'
+import { readStorage, writeStorage } from '../../../utils/storage'
 
 const STORAGE_KEY = 'panel-widths'
 const DEFAULT = [48, 52]

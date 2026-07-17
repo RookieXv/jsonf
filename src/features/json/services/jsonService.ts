@@ -337,8 +337,7 @@ function hasEscapedDisplay(token) {
 function isNestedJsonString(value) {
   const trimmed = value.trim()
   const looksLikeJson =
-    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))
 
   if (!looksLikeJson) return false
 
