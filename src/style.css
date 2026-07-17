@@ -128,9 +128,9 @@ button {
   min-height: 0;
   overflow: auto;
   background:
-    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 24%),
-    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--select) 12%, transparent), transparent 26%),
-    linear-gradient(135deg, var(--bg), var(--bg-deep));
+    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 24%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--select) 5%, transparent), transparent 26%),
+    linear-gradient(135deg, #f6f9fb, #edf3f6);
 }
 
 .timestamp-page {
@@ -149,8 +149,8 @@ button {
 .timestamp-code-card {
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: var(--surface);
-  box-shadow: var(--shadow-soft);
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--text) 7%, transparent);
 }
 
 .timestamp-live-card {
@@ -158,8 +158,15 @@ button {
   overflow: hidden;
   padding: 16px 18px;
   background:
-    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--amber) 18%, transparent) 0 13%, transparent 13.5%),
-    linear-gradient(120deg, color-mix(in srgb, var(--select) 13%, var(--surface-strong)), color-mix(in srgb, var(--accent) 9%, var(--surface-strong)));
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--amber) 10%, transparent) 0 13%, transparent 13.5%),
+    linear-gradient(120deg, color-mix(in srgb, var(--select) 7%, var(--surface-strong)), color-mix(in srgb, var(--accent) 5%, var(--surface-strong)));
+}
+
+:root[data-theme='dark'] .timestamp-tool {
+  background:
+    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 24%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--select) 6%, transparent), transparent 26%),
+    linear-gradient(135deg, #18232e, #111a23);
 }
 
 .timestamp-live-head,
@@ -499,9 +506,9 @@ button {
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--line-strong) 64%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
-  box-shadow: 0 14px 38px color-mix(in srgb, var(--text) 10%, transparent);
-  backdrop-filter: blur(18px) saturate(1.04);
+  background: color-mix(in srgb, var(--surface-strong) 76%, transparent);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--text) 8%, transparent);
+  backdrop-filter: blur(12px) saturate(1.02);
 }
 
 .timestamp-history-panel > header,
@@ -563,12 +570,15 @@ button {
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--line);
-  background: rgba(241, 247, 249, 0.82);
-  backdrop-filter: blur(24px) saturate(1.08);
+  background: rgba(252, 253, 254, 0.96);
+  backdrop-filter: blur(10px) saturate(1.01);
 }
 
 .topbar {
   z-index: 90;
+  background: rgba(239, 245, 248, 0.97);
+  border-bottom-color: rgba(42, 55, 71, 0.16);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
 .commandbar {
@@ -582,12 +592,18 @@ button {
 :root[data-theme='dark'] .topbar,
 :root[data-theme='dark'] .commandbar,
 :root[data-theme='dark'] .statusbar {
-  background: rgba(17, 24, 32, 0.86);
+  background: rgba(18, 26, 35, 0.96);
+}
+
+:root[data-theme='dark'] .topbar {
+  background: rgba(27, 38, 49, 0.97);
+  border-bottom-color: rgba(225, 235, 246, 0.18);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
 }
 
 .topbar {
-  gap: 20px;
-  padding: 0 18px;
+  gap: 18px;
+  padding: 0 22px;
 }
 
 .topbar-actions {
@@ -598,44 +614,38 @@ button {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 116px;
+  gap: 7px;
+  min-width: 86px;
 }
 
 .brand-mark {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  color: var(--accent);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(244, 248, 249, 0.74)),
-    var(--surface-strong);
-  box-shadow: var(--shadow-soft);
+  border: 0;
+  border-radius: 6px;
+  color: var(--surface-strong);
+  background: var(--text);
 }
 
 .brand-mark img {
-  width: 24px;
-  height: 24px;
+  width: 19px;
+  height: 19px;
   display: block;
 }
 
 :root[data-theme='dark'] .brand-mark {
-  background:
-    linear-gradient(180deg, rgba(54, 66, 80, 0.92), rgba(34, 43, 53, 0.9)),
-    var(--surface-strong);
-  border-color: rgba(229, 239, 248, 0.18);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 10px 26px rgba(0, 0, 0, 0.24);
+  background: #edf4f8;
+  color: #17212b;
+  box-shadow: none;
 }
 
 .brand strong {
   display: block;
-  font-size: 15px;
-  letter-spacing: 0.08em;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
 }
 
 .brand span,
@@ -650,21 +660,25 @@ button {
 .tool-tabs {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .tool-tab {
   height: 32px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 0 11px;
+  gap: 6px;
+  padding: 0 12px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--muted) 88%, var(--text));
   font-size: 12px;
   cursor: pointer;
   transition:
@@ -675,14 +689,11 @@ button {
 }
 
 .tool-tab.active {
-  color: var(--accent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 72%, white 28%), rgba(255, 255, 255, 0.54)),
-    var(--surface-strong);
-  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  border-color: transparent;
   box-shadow:
-    inset 0 -2px 0 color-mix(in srgb, var(--accent) 52%, transparent),
-    0 12px 26px rgba(8, 119, 111, 0.1);
+    inset 0 -2px 0 var(--accent);
 }
 
 .tool-tab:disabled {
@@ -695,15 +706,10 @@ button {
 }
 
 :root[data-theme='dark'] .tool-tab.active {
-  color: var(--accent);
-  background:
-    linear-gradient(180deg, rgba(35, 72, 72, 0.92), rgba(28, 48, 59, 0.92)),
-    var(--surface-strong);
-  border-color: rgba(99, 219, 201, 0.36);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    inset 0 -2px 0 rgba(99, 219, 201, 0.66),
-    0 14px 28px rgba(0, 0, 0, 0.22);
+  color: #f2f7fb;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: transparent;
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 :root[data-theme='dark'] .tool-tab:disabled {
@@ -717,6 +723,34 @@ button {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+
+.topbar-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 12px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.topbar-actions-group .select-button,
+.topbar-actions-group .icon-button {
+  border-color: transparent;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.topbar-actions-group .select-button:hover,
+.topbar-actions-group .icon-button:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text);
+  box-shadow: none;
 }
 
 .commandbar {
@@ -831,6 +865,39 @@ button {
     linear-gradient(180deg, rgba(42, 78, 78, 0.94), rgba(31, 53, 62, 0.94)),
     var(--accent-soft);
   border-color: rgba(99, 219, 201, 0.38);
+}
+
+:root[data-theme='dark'] .topbar-actions-group {
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: transparent;
+}
+
+:root[data-theme='dark'] .topbar-actions-group .select-button,
+:root[data-theme='dark'] .topbar-actions-group .icon-button {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .topbar-actions-group .select-button:hover,
+:root[data-theme='dark'] .topbar-actions-group .icon-button:hover {
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f2f7fb;
+  box-shadow: none;
+}
+
+.tool-tab.active:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+:root[data-theme='dark'] .tool-tab.active:hover {
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .icon-button:active {

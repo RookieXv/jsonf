@@ -60,6 +60,11 @@ const jsonPath = ref('$')
 const t = preferences.t
 const currentTool = ref('formatter')
 
+function selectTool(tool) {
+  currentTool.value = tool
+  if (tool === 'timestamp') preferences.settingsOpen.value = false
+}
+
 const statusLabel = computed(() => {
   if (workbench.status.value === 'valid') return t.value.status.valid
   if (workbench.status.value === 'invalid') return t.value.status.invalid
@@ -345,7 +350,7 @@ function inferJsonPath(value, targetLine) {
           class="tool-tab"
           :class="{ active: currentTool === tool.key }"
           :disabled="tool.disabled"
-          @click="currentTool = tool.key"
+          @click="selectTool(tool.key)"
         >
           <component :is="tool.icon" :size="15" />
           {{ t.tools[tool.key] }}
@@ -353,21 +358,23 @@ function inferJsonPath(value, targetLine) {
       </nav>
 
       <div class="topbar-actions">
-        <button class="select-button" :title="t.commands.language">
-          <Languages :size="15" />
-          <select v-model="preferences.language.value" aria-label="language">
-            <option v-for="language in LANGUAGES" :key="language.key" :value="language.key">
-              {{ language.short }}
-            </option>
-          </select>
-        </button>
-        <IconButton :label="t.commands.theme" @click="preferences.cycleTheme">
-          <Sun v-if="preferences.appliedTheme.value === 'light'" :size="16" />
-          <Moon v-else :size="16" />
-        </IconButton>
-        <IconButton :label="t.commands.settings" @click="preferences.settingsOpen.value = true">
-          <Settings :size="16" />
-        </IconButton>
+        <div class="topbar-actions-group">
+          <button class="select-button" :title="t.commands.language">
+            <Languages :size="15" />
+            <select v-model="preferences.language.value" aria-label="language">
+              <option v-for="language in LANGUAGES" :key="language.key" :value="language.key">
+                {{ language.short }}
+              </option>
+            </select>
+          </button>
+          <IconButton :label="t.commands.theme" @click="preferences.cycleTheme">
+            <Sun v-if="preferences.appliedTheme.value === 'light'" :size="16" />
+            <Moon v-else :size="16" />
+          </IconButton>
+          <IconButton v-if="currentTool === 'formatter'" :label="t.commands.settings" @click="preferences.settingsOpen.value = !preferences.settingsOpen.value">
+            <Settings :size="16" />
+          </IconButton>
+        </div>
       </div>
     </header>
 
@@ -721,6 +728,10 @@ function inferJsonPath(value, targetLine) {
       {{ translateNotice(workbench.notice.value) }}
     </div>
 
+    </template>
+
+    <TimestampTool v-else-if="currentTool === 'timestamp'" :language="preferences.language.value" />
+
     <SettingsPanel
       :open="preferences.settingsOpen.value"
       :t="t"
@@ -738,8 +749,5 @@ function inferJsonPath(value, targetLine) {
       @update:line-wrap="workbench.lineWrap.value = $event"
       @update:line-numbers="workbench.lineNumbers.value = $event"
     />
-    </template>
-
-    <TimestampTool v-else-if="currentTool === 'timestamp'" :language="preferences.language.value" />
   </div>
 </template>
