@@ -9,7 +9,7 @@ defineProps({
 const router = useRouter()
 
 const homeTools = [
-  { key: 'formatter', path: '/json/format', icon: Braces },
+  { key: 'formatter', path: '/json', icon: Braces },
   { key: 'timestamp', path: '/timestamp', icon: Clock3 },
 ]
 </script>
