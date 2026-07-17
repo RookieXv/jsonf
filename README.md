@@ -50,7 +50,8 @@ http://localhost:5173
 
 JSON 格式化与时间戳工具分别拥有独立地址：
 
-- `/json`
+- `/`（工具主页）
+- `/json/format`
 - `/timestamp`
 
 ### 构建生产版本

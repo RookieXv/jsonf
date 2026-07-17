@@ -27,8 +27,9 @@ import {
   WrapText,
 } from '@lucide/vue'
 import { computed, nextTick, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import IconButton from './components/IconButton.vue'
+import HomeView from './features/home/HomeView.vue'
 import JsonEditor from './features/json/components/JsonEditor.vue'
 import JsonTreeNode from './features/json/components/JsonTreeNode.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
@@ -335,9 +336,16 @@ function inferJsonPath(value, targetLine) {
 </script>
 
 <template>
-  <div class="app-shell" :class="{ 'app-shell--timestamp': currentTool === 'timestamp' }" @keydown.capture="handleUndoKey">
+  <div
+    class="app-shell"
+    :class="{
+      'app-shell--home': currentTool === 'home',
+      'app-shell--timestamp': currentTool === 'timestamp',
+    }"
+    @keydown.capture="handleUndoKey"
+  >
     <header class="topbar">
-      <div class="brand">
+      <RouterLink class="brand" to="/" :aria-label="t.home.backHome">
         <div class="brand-mark" aria-hidden="true">
           <img src="/favicon.svg" alt="" />
         </div>
@@ -345,7 +353,7 @@ function inferJsonPath(value, targetLine) {
           <strong>JSONF</strong>
           <span v-if="t.appTagline">{{ t.appTagline }}</span>
         </div>
-      </div>
+      </RouterLink>
 
       <nav class="tool-tabs" aria-label="tools">
         <button
@@ -382,7 +390,9 @@ function inferJsonPath(value, targetLine) {
       </div>
     </header>
 
-    <template v-if="currentTool === 'formatter'">
+    <HomeView v-if="currentTool === 'home'" :copy="t.home" />
+
+    <template v-else-if="currentTool === 'formatter'">
     <section class="commandbar">
       <div class="command-group">
         <IconButton :label="t.commands.format" @click="workbench.format">

@@ -11,6 +11,19 @@ export const LANGUAGES = [
 export const messages = {
   'zh-CN': {
     appTagline: '',
+    home: {
+      backHome: '返回首页',
+      eyebrow: '本地优先的开发者工具平台',
+      title: '常用开发工具，一个入口完成',
+      subtitle: '无需登录、无需上传数据。所有处理都在浏览器本地完成。',
+      available: '立即使用',
+      formatterTitle: 'JSON 格式化',
+      formatterDescription: '格式化、校验、修复、搜索并以树形结构查看 JSON。',
+      timestampTitle: '时间戳转换',
+      timestampDescription: '转换时间戳与日期时间，对照时区并进行时间计算。',
+      localOnly: '数据仅在本地处理',
+      fast: '打开即用',
+    },
     tools: {
       formatter: 'JSON 格式化',
       timestamp: '时间戳转换',
@@ -118,6 +131,19 @@ export const messages = {
   },
   'zh-TW': {
     appTagline: '',
+    home: {
+      backHome: '返回首頁',
+      eyebrow: '本地優先的開發者工具平台',
+      title: '常用開發工具，一個入口完成',
+      subtitle: '無需登入、無需上傳資料。所有處理都在瀏覽器本地完成。',
+      available: '立即使用',
+      formatterTitle: 'JSON 格式化',
+      formatterDescription: '格式化、驗證、修復、搜尋並以樹狀結構檢視 JSON。',
+      timestampTitle: '時間戳轉換',
+      timestampDescription: '轉換時間戳與日期時間，對照時區並進行時間計算。',
+      localOnly: '資料僅在本地處理',
+      fast: '開啟即用',
+    },
     tools: {
       formatter: 'JSON 格式化',
       timestamp: '時間戳轉換',
@@ -225,6 +251,19 @@ export const messages = {
   },
   en: {
     appTagline: 'Local-first JSON workstation',
+    home: {
+      backHome: 'Back to home',
+      eyebrow: 'Local-first developer toolkit',
+      title: 'Everyday developer tools in one place',
+      subtitle: 'No account and no uploads. All processing stays in your browser.',
+      available: 'Open tool',
+      formatterTitle: 'JSON Formatter',
+      formatterDescription: 'Format, validate, repair, search, and inspect JSON as a tree.',
+      timestampTitle: 'Timestamp Converter',
+      timestampDescription: 'Convert timestamps and dates, compare time zones, and calculate offsets.',
+      localOnly: 'Local processing only',
+      fast: 'Ready instantly',
+    },
     tools: {
       formatter: 'JSON Formatter',
       timestamp: 'Timestamp',
